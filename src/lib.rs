@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, path::Path};
 
 use colored::Colorize;
 use console::Term;
@@ -27,7 +27,7 @@ pub struct Sentence {
 }
 
 impl Sentence {
-    pub fn new(source: impl Sourceable) -> Self {
+    pub fn new(source: &impl Sourceable) -> Self {
         match source.get_new_sentence() {
             Ok(contents) => {
                 let typed_arr_len = contents.len();
@@ -42,6 +42,19 @@ impl Sentence {
                 sen
             }
             Err(err) => Sentence::error(err),
+        }
+    }
+
+    pub fn get_next_sentence(&mut self, source: &impl Sourceable) {
+        match source.get_new_sentence() {
+            Ok(contents) => {
+                let typed_arr_len = contents.len();
+                self.contents = contents;
+                self.typed_arr = vec![TypedAs::Pending; typed_arr_len];
+                self.current_idx = 0;
+                *self.typed_arr.get_mut(0).unwrap() = TypedAs::Current;
+            }
+            Err(err) => panic!(),
         }
     }
 
@@ -74,6 +87,7 @@ impl Sentence {
                 self.errors += 1;
                 *self.typed_arr.get_mut(self.current_idx).unwrap() = TypedAs::Wrong;
             }
+            // TODO: keep accuracy between sentences
             self.accuracy =
                 (100.0 - (100.0 * self.errors as f32 / (self.current_idx + 1) as f32)).max(0.0);
         }
@@ -165,5 +179,23 @@ impl Sourceable for WikipediaSource {
             }
             Err(err) => Err(format!("Error ocurred while sending request: {err}")),
         }
+    }
+}
+
+pub struct TextFileSource {
+    file_path: String,
+}
+
+impl TextFileSource {
+    pub fn from_file(file_path: impl ToString) -> Self {
+        TextFileSource {
+            file_path: file_path.to_string(),
+        }
+    }
+}
+
+impl Sourceable for TextFileSource {
+    fn get_new_sentence(&self) -> Result<String, String> {
+        todo!()
     }
 }
