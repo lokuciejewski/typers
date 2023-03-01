@@ -1,7 +1,7 @@
 use std::{fmt::Display, path::Path};
 
 use colored::Colorize;
-use console::Term;
+use console::{Key, Term};
 use reqwest::StatusCode;
 use serde_json::Value;
 
@@ -18,30 +18,32 @@ enum TypedAs {
     Corrected,
 }
 
-pub struct Sentence {
+pub struct SentenceTyper {
     contents: String,
     typed_arr: Vec<TypedAs>,
     current_idx: usize,
-    errors: u16,
-    accuracy: f32,
+    errors: u32,
+    typed_chars: u32,
+    typed_words: u16,
 }
 
-impl Sentence {
+impl SentenceTyper {
     pub fn new(source: &impl Sourceable) -> Self {
         match source.get_new_sentence() {
             Ok(contents) => {
                 let typed_arr_len = contents.len();
-                let mut sen = Sentence {
+                let mut sen = SentenceTyper {
                     contents,
                     typed_arr: vec![TypedAs::Pending; typed_arr_len],
                     current_idx: 0,
                     errors: 0,
-                    accuracy: 0.0,
+                    typed_chars: 0,
+                    typed_words: 0,
                 };
                 *sen.typed_arr.get_mut(0).unwrap() = TypedAs::Current;
                 sen
             }
-            Err(err) => Sentence::error(err),
+            Err(err) => SentenceTyper::error(err),
         }
     }
 
@@ -60,7 +62,7 @@ impl Sentence {
 
     fn error(error_msg: impl ToString) -> Self {
         let typed_arr_len = error_msg.to_string().len();
-        Sentence {
+        SentenceTyper {
             contents: error_msg.to_string(),
             typed_arr: vec![TypedAs::Wrong; typed_arr_len],
             current_idx: typed_arr_len,
@@ -71,33 +73,44 @@ impl Sentence {
     fn type_next_char(&mut self) {
         let desired_char = self.contents.as_bytes().get(self.current_idx).unwrap();
         let stdout = Term::buffered_stdout();
-        if let Ok(key) = stdout.read_char() {
-            if key == *desired_char as char {
-                if *self.typed_arr.get(self.current_idx).unwrap() == TypedAs::Wrong {
-                    *self.typed_arr.get_mut(self.current_idx).unwrap() = TypedAs::Corrected;
-                } else {
-                    *self.typed_arr.get_mut(self.current_idx).unwrap() = TypedAs::Correct;
+        if let Ok(key) = stdout.read_key() {
+            match key {
+                Key::Escape => self.current_idx = self.contents.len(),
+                Key::Char(c) => {
+                    if c == *desired_char as char {
+                        if *self.typed_arr.get(self.current_idx).unwrap() == TypedAs::Wrong {
+                            *self.typed_arr.get_mut(self.current_idx).unwrap() = TypedAs::Corrected;
+                        } else {
+                            *self.typed_arr.get_mut(self.current_idx).unwrap() = TypedAs::Correct;
+                        }
+                        self.typed_chars += 1;
+                        self.current_idx += 1;
+                        match self.typed_arr.get_mut(self.current_idx) {
+                            Some(s) => *s = TypedAs::Current,
+                            None => (), // End of the sentence
+                        }
+                    } else {
+                        self.errors += 1;
+                        *self.typed_arr.get_mut(self.current_idx).unwrap() = TypedAs::Wrong;
+                    }
                 }
-                self.current_idx += 1;
-                match self.typed_arr.get_mut(self.current_idx) {
-                    Some(s) => *s = TypedAs::Current,
-                    None => (), // End of the sentence
-                }
-            } else {
-                self.errors += 1;
-                *self.typed_arr.get_mut(self.current_idx).unwrap() = TypedAs::Wrong;
+                _ => (),
             }
-            // TODO: keep accuracy between sentences
-            self.accuracy =
-                (100.0 - (100.0 * self.errors as f32 / (self.current_idx + 1) as f32)).max(0.0);
         }
     }
 
     fn print_prompt(&self) {
         print!("\x1B[2J\x1B[1;1H");
         println!("{}", self);
-        println!("Errors: {}", self.errors);
-        println!("Accuracy: {:.02}%", self.accuracy);
+        println!(
+            "Errors: {} | Accuracy: {:.02}%",
+            self.errors,
+            self.get_accuracy()
+        );
+    }
+
+    fn get_accuracy(&self) -> f32 {
+        (100.0 - (self.errors as f32 * 100.0 / self.typed_chars as f32)).max(0.0)
     }
 
     pub fn type_sentence(&mut self) {
@@ -109,7 +122,7 @@ impl Sentence {
     }
 }
 
-impl Display for Sentence {
+impl Display for SentenceTyper {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.contents
             .chars()
@@ -128,14 +141,15 @@ impl Display for Sentence {
     }
 }
 
-impl Default for Sentence {
+impl Default for SentenceTyper {
     fn default() -> Self {
         Self {
             contents: Default::default(),
             typed_arr: Default::default(),
             current_idx: Default::default(),
             errors: Default::default(),
-            accuracy: Default::default(),
+            typed_words: Default::default(),
+            typed_chars: Default::default(),
         }
     }
 }

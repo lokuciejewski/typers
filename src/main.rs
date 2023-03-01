@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use typers::{Sentence, TextFileSource, WikipediaSource};
+use typers::{SentenceTyper, TextFileSource, WikipediaSource};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -21,7 +21,7 @@ fn main() {
         Some(src) => match src.to_ascii_lowercase().as_str() {
             "wiki" => {
                 let wiki_source = WikipediaSource::default();
-                let mut sentence = Sentence::new(&wiki_source);
+                let mut sentence = SentenceTyper::new(&wiki_source);
                 for _ in 0..args.number {
                     sentence.type_sentence();
                     sentence.get_next_sentence(&wiki_source);
@@ -29,7 +29,7 @@ fn main() {
             }
             file_path => {
                 let file_source = TextFileSource::from_file(file_path);
-                let mut sentence = Sentence::new(&file_source);
+                let mut sentence = SentenceTyper::new(&file_source);
                 sentence.type_sentence();
             }
         },
