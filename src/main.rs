@@ -11,7 +11,7 @@ struct Args {
 
     /// Number of sentences to be run
     #[arg(short, long, default_value_t = 1)]
-    number: u8
+    number: u8,
 }
 
 fn main() {
@@ -22,15 +22,12 @@ fn main() {
             "wiki" => {
                 let wiki_source = WikipediaSource::default();
                 let mut sentence = SentenceTyper::new(&wiki_source);
-                for _ in 0..args.number {
-                    sentence.type_sentence();
-                    sentence.get_next_sentence(&wiki_source);
-                }
+                sentence.type_sentences(args.number, &wiki_source);
             }
             file_path => {
                 let file_source = TextFileSource::from_file(file_path);
                 let mut sentence = SentenceTyper::new(&file_source);
-                sentence.type_sentence();
+                sentence.type_sentences(args.number, &file_source);
             }
         },
         None => todo!(),

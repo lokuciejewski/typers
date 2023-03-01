@@ -1,4 +1,4 @@
-use std::{fmt::Display, path::Path};
+use std::{fmt::Display, path::Path, time::Instant};
 
 use colored::Colorize;
 use console::{Key, Term};
@@ -25,6 +25,7 @@ pub struct SentenceTyper {
     errors: u32,
     typed_chars: u32,
     typed_words: u16,
+    start_time: Instant,
 }
 
 impl SentenceTyper {
@@ -39,6 +40,7 @@ impl SentenceTyper {
                     errors: 0,
                     typed_chars: 0,
                     typed_words: 0,
+                    start_time: Instant::now(),
                 };
                 *sen.typed_arr.get_mut(0).unwrap() = TypedAs::Current;
                 sen
@@ -83,6 +85,9 @@ impl SentenceTyper {
                         } else {
                             *self.typed_arr.get_mut(self.current_idx).unwrap() = TypedAs::Correct;
                         }
+                        if c == ' ' {
+                            self.typed_words += 1;
+                        }
                         self.typed_chars += 1;
                         self.current_idx += 1;
                         match self.typed_arr.get_mut(self.current_idx) {
@@ -103,9 +108,10 @@ impl SentenceTyper {
         print!("\x1B[2J\x1B[1;1H");
         println!("{}", self);
         println!(
-            "Errors: {} | Accuracy: {:.02}%",
+            "Errors: {} | Accuracy: {:.02}% | WPM: {:.02}",
             self.errors,
-            self.get_accuracy()
+            self.get_accuracy(),
+            60.0 * self.typed_words as f32 / self.start_time.elapsed().as_secs_f32()
         );
     }
 
@@ -113,12 +119,15 @@ impl SentenceTyper {
         (100.0 - (self.errors as f32 * 100.0 / self.typed_chars as f32)).max(0.0)
     }
 
-    pub fn type_sentence(&mut self) {
-        while self.current_idx != self.contents.len() {
+    pub fn type_sentences(&mut self, n_of_sentences: u8, sentence_source: &impl Sourceable) {
+        for _ in 0..n_of_sentences {
+            while self.current_idx != self.contents.len() {
+                self.print_prompt();
+                self.type_next_char();
+            }
             self.print_prompt();
-            self.type_next_char();
+            self.get_next_sentence(sentence_source);
         }
-        self.print_prompt();
     }
 }
 
@@ -150,6 +159,7 @@ impl Default for SentenceTyper {
             errors: Default::default(),
             typed_words: Default::default(),
             typed_chars: Default::default(),
+            start_time: Instant::now(),
         }
     }
 }
