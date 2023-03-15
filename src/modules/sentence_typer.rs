@@ -1,12 +1,10 @@
-use std::{time::Instant, fmt::Display};
+use std::{fmt::Display, time::Instant};
 
 use colored::Colorize;
 use console::{Key, Term};
+use rand::{seq::SliceRandom, thread_rng};
 
 use super::sources::Sourceable;
-
-
-
 
 #[derive(Clone, PartialEq)]
 enum TypedAs {
@@ -18,13 +16,14 @@ enum TypedAs {
 }
 
 pub struct SentenceTyper {
-    contents: String,
+    current_contents: String,
     typed_arr: Vec<TypedAs>,
     current_idx: usize,
     errors: u32,
     typed_chars: u32,
     typed_words: u16,
     start_time: Instant,
+    sources: Vec<Box<dyn Sourceable>>,
 }
 
 impl SentenceTyper {
@@ -33,13 +32,14 @@ impl SentenceTyper {
             Ok(contents) => {
                 let typed_arr_len = contents.len();
                 let mut sen = SentenceTyper {
-                    contents,
+                    current_contents: contents,
                     typed_arr: vec![TypedAs::Pending; typed_arr_len],
                     current_idx: 0,
                     errors: 0,
                     typed_chars: 0,
                     typed_words: 0,
                     start_time: Instant::now(),
+                    sources: vec![],
                 };
                 *sen.typed_arr.get_mut(0).unwrap() = TypedAs::Current;
                 sen
@@ -48,23 +48,42 @@ impl SentenceTyper {
         }
     }
 
-    pub fn get_next_sentence(&mut self, source: &impl Sourceable) {
-        match source.get_new_sentence() {
-            Ok(contents) => {
-                let typed_arr_len = contents.len();
-                self.contents = contents;
-                self.typed_arr = vec![TypedAs::Pending; typed_arr_len];
-                self.current_idx = 0;
-                *self.typed_arr.get_mut(0).unwrap() = TypedAs::Current;
+    pub fn type_sentences(&mut self, n_of_sentences: u8) {
+        self.get_next_sentence();
+        for _ in 0..n_of_sentences {
+            while self.current_idx != self.current_contents.len() {
+                self.print_prompt();
+                self.type_next_char();
             }
-            Err(_err) => panic!(),
+            self.print_prompt();
+            self.get_next_sentence();
+        }
+    }
+
+    pub fn add_source(&mut self, source: impl Sourceable + 'static) {
+        self.sources.push(Box::new(source));
+    }
+
+    fn get_next_sentence(&mut self) {
+        match self.sources.choose(&mut thread_rng()) {
+            Some(source) => match source.get_new_sentence() {
+                Ok(contents) => {
+                    let typed_arr_len = contents.len();
+                    self.current_contents = contents;
+                    self.typed_arr = vec![TypedAs::Pending; typed_arr_len];
+                    self.current_idx = 0;
+                    *self.typed_arr.get_mut(0).unwrap() = TypedAs::Current;
+                }
+                Err(_err) => panic!(),
+            },
+            None => todo!(),
         }
     }
 
     fn error(error_msg: impl ToString) -> Self {
         let typed_arr_len = error_msg.to_string().len();
         SentenceTyper {
-            contents: error_msg.to_string(),
+            current_contents: error_msg.to_string(),
             typed_arr: vec![TypedAs::Wrong; typed_arr_len],
             current_idx: typed_arr_len,
             ..Default::default()
@@ -72,11 +91,15 @@ impl SentenceTyper {
     }
 
     fn type_next_char(&mut self) {
-        let desired_char = self.contents.as_bytes().get(self.current_idx).unwrap();
+        let desired_char = self
+            .current_contents
+            .as_bytes()
+            .get(self.current_idx)
+            .unwrap();
         let stdout = Term::buffered_stdout();
         if let Ok(key) = stdout.read_key() {
             match key {
-                Key::Escape => self.current_idx = self.contents.len(),
+                Key::Escape => self.current_idx = self.current_contents.len(),
                 Key::Char(c) => {
                     if c == *desired_char as char {
                         if *self.typed_arr.get(self.current_idx).unwrap() == TypedAs::Wrong {
@@ -117,22 +140,11 @@ impl SentenceTyper {
     fn get_accuracy(&self) -> f32 {
         (100.0 - (self.errors as f32 * 100.0 / self.typed_chars as f32)).max(0.0)
     }
-
-    pub fn type_sentences(&mut self, n_of_sentences: u8, sentence_source: &impl Sourceable) {
-        for _ in 0..n_of_sentences {
-            while self.current_idx != self.contents.len() {
-                self.print_prompt();
-                self.type_next_char();
-            }
-            self.print_prompt();
-            self.get_next_sentence(sentence_source);
-        }
-    }
 }
 
 impl Display for SentenceTyper {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.contents
+        self.current_contents
             .chars()
             .into_iter()
             .enumerate()
@@ -152,13 +164,14 @@ impl Display for SentenceTyper {
 impl Default for SentenceTyper {
     fn default() -> Self {
         Self {
-            contents: Default::default(),
+            current_contents: Default::default(),
             typed_arr: Default::default(),
             current_idx: Default::default(),
             errors: Default::default(),
             typed_words: Default::default(),
             typed_chars: Default::default(),
             start_time: Instant::now(),
+            sources: vec![],
         }
     }
 }
