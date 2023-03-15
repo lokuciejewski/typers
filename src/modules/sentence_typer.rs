@@ -1,14 +1,12 @@
-use std::{fmt::Display, fs, io::Read, path::PathBuf, time::Instant};
+use std::{time::Instant, fmt::Display};
 
 use colored::Colorize;
 use console::{Key, Term};
-use rand::{seq::SliceRandom, thread_rng};
-use reqwest::StatusCode;
-use serde_json::Value;
 
-pub trait Sourceable {
-    fn get_new_sentence(&self) -> Result<String, String>;
-}
+use super::sources::Sourceable;
+
+
+
 
 #[derive(Clone, PartialEq)]
 enum TypedAs {
@@ -161,111 +159,6 @@ impl Default for SentenceTyper {
             typed_words: Default::default(),
             typed_chars: Default::default(),
             start_time: Instant::now(),
-        }
-    }
-}
-
-pub struct WikipediaSource {
-    http_address: String,
-}
-
-impl Default for WikipediaSource {
-    fn default() -> Self {
-        Self {
-            http_address: "https://en.wikipedia.org/api/rest_v1/page/random/summary".to_owned(),
-        }
-    }
-}
-
-impl Sourceable for WikipediaSource {
-    fn get_new_sentence(&self) -> Result<String, String> {
-        match reqwest::blocking::get(&self.http_address) {
-            Ok(resp) => {
-                if resp.status() == StatusCode::OK {
-                    let obj: Value = serde_json::from_str(resp.text().unwrap().as_str()).unwrap();
-                    let extract: String = obj
-                        .get("extract")
-                        .unwrap()
-                        .to_string()
-                        .strip_prefix("\"")
-                        .unwrap()
-                        .strip_suffix("\"")
-                        .unwrap()
-                        .replace("\\", "")
-                        .to_string();
-                    Ok(any_ascii::any_ascii(extract.as_str()))
-                } else {
-                    Err(format!(
-                        "Received status code {} instead of {}",
-                        resp.status(),
-                        StatusCode::OK
-                    ))
-                }
-            }
-            Err(err) => Err(format!("Error ocurred while sending request: {err}")),
-        }
-    }
-}
-
-pub struct TextFileSource {
-    file_path: PathBuf,
-    lines: Vec<String>,
-}
-
-impl TextFileSource {
-    pub fn from_file(file_path: impl ToString) -> Result<Self, String> {
-        let mut tfs = TextFileSource {
-            file_path: PathBuf::from(file_path.to_string()),
-            lines: vec![],
-        };
-        match tfs.load_source() {
-            Ok(_) => Ok(tfs),
-            Err(err) => Err(err),
-        }
-    }
-
-    fn load_source(&mut self) -> Result<(), String> {
-        // Try parsing by extension:
-        // 1. JSON -> json list with sentences/text: [ "text1", "text2", ... ]
-        // 2. Plain text -> plain text object where the '\n' denotes the end of each text/sentence
-        // 3. YAML?
-        // 4. CSV?
-        println!("Trying to read file: {:?}", self.file_path);
-        if self.file_path.exists() {
-            match self.file_path.extension() {
-                Some(extension) => match extension.to_str().unwrap() {
-                    "json" => match fs::File::open(self.file_path.to_owned()) {
-                        Ok(mut f) => {
-                            let mut contents = String::new();
-                            f.read_to_string(&mut contents).unwrap();
-                            match serde_json::from_str(&contents) {
-                                Ok(json) => {
-                                    self.lines = json;
-                                }
-                                Err(_) => todo!(),
-                            }
-                        }
-                        Err(_) => todo!(),
-                    },
-                    "yaml" | "yml" => println!("yaml!"),
-                    "csv" => println!("csv!"),
-                    "txt" => println!("txt!"),
-                    _ => println!("other!"),
-                },
-                None => println!("no extension!"),
-            }
-            Ok(())
-        } else {
-            Err("File does not exist!".to_string())
-        }
-    }
-}
-
-impl Sourceable for TextFileSource {
-    fn get_new_sentence(&self) -> Result<String, String> {
-        match self.lines.choose(&mut thread_rng()) {
-            Some(line) => Ok(line.to_owned()),
-            None => todo!(),
         }
     }
 }

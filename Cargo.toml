@@ -1,13 +1,19 @@
 [package]
 name = "typers"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
+description = "Terminal-based typing app"
+readme = "README.md"
+homepage = "https://github.com/lokuciejewski/typers"
+repository = "https://github.com/lokuciejewski/typers"
+keywords = ["cli", "typing", "terminal"]
+categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 colored = "2.0.0"
-reqwest = { version = "0.11.4", features = ["blocking"]}
+reqwest = { version = "0.11.4", features = ["blocking"] }
 serde_json = "1.0.93"
 any_ascii = "0.3.1"
 console = "0.15.5"

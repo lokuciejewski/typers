@@ -1,13 +1,18 @@
-use clap::Parser;
+mod modules;
 
-use typers::{SentenceTyper, TextFileSource, WikipediaSource};
+use clap::{Parser, ValueHint};
+use modules::sentence_typer::SentenceTyper;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Source of the sentence. Can be `wiki` for Wikipedia random page or any text file path
+    /// Specify if the random summaries from Wikipedia should be used
     #[arg(short, long)]
-    source: Option<String>,
+    wikipedia: Option<bool>,
+
+    /// Specify a file path for sourcing sentences
+    #[arg(short, long, value_hint = ValueHint::FilePath)]
+    file_path: Option<String>,
 
     /// Number of sentences to be run
     #[arg(short, long, default_value_t = 1)]
@@ -17,19 +22,5 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    match args.source {
-        Some(src) => match src.to_ascii_lowercase().as_str() {
-            "wiki" => {
-                let wiki_source = WikipediaSource::default();
-                let mut sentence = SentenceTyper::new(&wiki_source);
-                sentence.type_sentences(args.number, &wiki_source);
-            }
-            file_path => {
-                let file_source = TextFileSource::from_file(file_path).unwrap();
-                let mut sentence = SentenceTyper::new(&file_source);
-                sentence.type_sentences(args.number, &file_source);
-            }
-        },
-        None => todo!(),
-    }
+    let mut sentence_typer = SentenceTyper::default();
 }
