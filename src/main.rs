@@ -42,7 +42,7 @@ fn main() {
                 }
             });
         }
-        None => todo!(),
+        None => (),
     }
     sentence_typer.type_sentences(args.number);
 }
