@@ -1,4 +1,4 @@
-use std::{fmt::Display, path::Path, time::Instant};
+use std::{fmt::Display, path::PathBuf, time::Instant};
 
 use colored::Colorize;
 use console::{Key, Term};
@@ -58,7 +58,7 @@ impl SentenceTyper {
                 self.current_idx = 0;
                 *self.typed_arr.get_mut(0).unwrap() = TypedAs::Current;
             }
-            Err(err) => panic!(),
+            Err(_err) => panic!(),
         }
     }
 
@@ -207,14 +207,39 @@ impl Sourceable for WikipediaSource {
 }
 
 pub struct TextFileSource {
-    file_path: String,
+    file_path: PathBuf,
 }
 
 impl TextFileSource {
-    pub fn from_file(file_path: impl ToString) -> Self {
-        TextFileSource {
-            file_path: file_path.to_string(),
+    pub fn from_file(file_path: impl ToString) -> Result<Self, String> {
+        let mut tfs = TextFileSource {
+            file_path: PathBuf::from(file_path.to_string()),
+        };
+        match tfs.load_source() {
+            Ok(_) => Ok(tfs),
+            Err(err) => Err(err),
         }
+    }
+
+    fn load_source(&mut self) -> Result<(), String> {
+        // Try parsing by extension:
+        // 1. JSON -> json list with sentences/text: [ "text1", "text2", ... ]
+        // 2. Plain text -> plain text object where the '\n' denotes the end of each text/sentence
+        // 3. YAML?
+        // 4. CSV?
+        if self.file_path.exists() {
+            match self.file_path.extension() {
+                Some(extension) => match extension.to_str().unwrap() {
+                    "json" => println!("json!"),
+                    "yaml" | "yml" => println!("yaml!"),
+                    "csv" => println!("csv!"),
+                    "txt" => println!("txt!"),
+                    _ => println!("other!"),
+                },
+                None => println!("no extension!"),
+            }
+        }
+        Err("File does not exist!".to_string())
     }
 }
 

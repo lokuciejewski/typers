@@ -25,7 +25,7 @@ fn main() {
                 sentence.type_sentences(args.number, &wiki_source);
             }
             file_path => {
-                let file_source = TextFileSource::from_file(file_path);
+                let file_source = TextFileSource::from_file(file_path).unwrap();
                 let mut sentence = SentenceTyper::new(&file_source);
                 sentence.type_sentences(args.number, &file_source);
             }
