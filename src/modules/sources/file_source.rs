@@ -1,9 +1,8 @@
-use std::{path::PathBuf, fs, io::Read};
+use std::{fs, io::Read, path::PathBuf};
 
-use rand::{thread_rng, seq::SliceRandom};
+use rand::{seq::SliceRandom, thread_rng};
 
 use super::Sourceable;
-
 
 pub struct TextFileSource {
     file_path: PathBuf,

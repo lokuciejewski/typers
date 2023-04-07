@@ -3,7 +3,6 @@ use serde_json::Value;
 
 use super::Sourceable;
 
-
 pub struct WikipediaSource {
     http_address: String,
 }

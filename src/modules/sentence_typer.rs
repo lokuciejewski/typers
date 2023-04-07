@@ -76,7 +76,9 @@ impl SentenceTyper {
                 }
                 Err(_err) => panic!(),
             },
-            None => eprintln!("No source provided! Please provide source according to `typers --help`"),
+            None => {
+                eprintln!("No source provided! Please provide source according to `typers --help`")
+            }
         }
     }
 

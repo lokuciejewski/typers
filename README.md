@@ -8,3 +8,8 @@ Currently supported sentence sources:
 Planned support for sentence sources:
  - sentences from command line arguments
  - sentences from other programs (such as `fortune`)
+
+## Installation
+If you have `cargo` installed, use
+
+`cargo install --git https://github.com/lokuciejewski/typers.git`
