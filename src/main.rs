@@ -1,9 +1,11 @@
 mod modules;
 
+use std::io::{self, BufRead};
+
 use clap::{Parser, ValueHint};
 use modules::{
     sentence_typer::SentenceTyper,
-    sources::{file_source::TextFileSource, wiki_source::WikipediaSource},
+    sources::{file_source::FileSource, text_source::TextSource, wiki_source::WikipediaSource},
 };
 
 #[derive(Parser, Debug)]
@@ -23,24 +25,36 @@ struct Args {
 }
 
 fn main() {
-    let args = Args::parse();
     let mut sentence_typer = SentenceTyper::default();
+    let args = Args::parse();
+
+    // Piped input
+    if atty::isnt(atty::Stream::Stdin) {
+        let stdin = io::stdin();
+        let read_line: String = stdin.lock().lines().next().unwrap().expect("");
+        let text_source = TextSource::new(read_line, '.');
+        sentence_typer.add_source(text_source);
+    }
+
+    // Wikipedia
     if args.wikipedia {
         let wiki_source = WikipediaSource::default();
         sentence_typer.add_source(wiki_source);
     }
+
+    // Files
     match args.file_paths {
         Some(mut v) => {
             v.sort();
             v.dedup();
-            v.into_iter().for_each(|file_path| {
-                match TextFileSource::from_file(file_path.to_owned()) {
+            v.into_iter().for_each(
+                |file_path| match FileSource::from_file(file_path.to_owned()) {
                     Ok(file_source) => {
                         sentence_typer.add_source(file_source);
                     }
                     Err(err) => eprintln!("Could not add source: {} - {}", file_path, err),
-                }
-            });
+                },
+            );
         }
         None => (),
     }

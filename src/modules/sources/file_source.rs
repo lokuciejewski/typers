@@ -4,14 +4,14 @@ use rand::{seq::SliceRandom, thread_rng};
 
 use super::Sourceable;
 
-pub struct TextFileSource {
+pub struct FileSource {
     file_path: PathBuf,
     lines: Vec<String>,
 }
 
-impl TextFileSource {
+impl FileSource {
     pub fn from_file(file_path: impl ToString) -> Result<Self, String> {
-        let mut tfs = TextFileSource {
+        let mut tfs = FileSource {
             file_path: PathBuf::from(file_path.to_string()),
             lines: vec![],
         };
@@ -58,7 +58,7 @@ impl TextFileSource {
     }
 }
 
-impl Sourceable for TextFileSource {
+impl Sourceable for FileSource {
     fn get_new_sentence(&self) -> Result<String, String> {
         match self.lines.choose(&mut thread_rng()) {
             Some(line) => Ok(line.to_owned()),
