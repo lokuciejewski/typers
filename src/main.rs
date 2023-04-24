@@ -59,4 +59,14 @@ fn main() {
         None => (),
     }
     sentence_typer.type_sentences(args.number);
+
+    match sentence_typer.get_accuracy() {
+        x if x <= 20.0 => println!("You could do better for sure!"),
+        x if x <= 40.0 => println!("Not great, you can try again next time!"),
+        x if x <= 60.0 => println!("Not too bad, but you can still be better!"),
+        x if x <= 80.0 => println!("Quite nice! But there is still some room for improvement!"),
+        x if x <= 95.0 => println!("Good job! Not too far from perfect!"),
+        x if x < 100.0 => println!("Wow! Almost perfect! Great job!"),
+        _ => println!("Perfect! You made no mistakes! Go grab yourself a cookie!"),
+    }
 }

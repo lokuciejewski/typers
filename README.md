@@ -12,6 +12,11 @@ Planned support for sentence sources:
 
 - sentences from command line arguments
 
+Planned features:
+
+- Add local high score table
+- Keep local statistics and display changes in accuracy/WPMs
+
 ## Installation
 
 Install `cargo` and use

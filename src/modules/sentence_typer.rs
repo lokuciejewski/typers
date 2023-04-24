@@ -64,6 +64,14 @@ impl SentenceTyper {
         self.sources.push(Box::new(source));
     }
 
+    pub fn get_accuracy(&self) -> f32 {
+        (100.0 - (self.errors as f32 * 100.0 / self.typed_chars as f32)).max(0.0)
+    }
+
+    pub fn get_wpms(&self) -> f32 {
+        60.0 * self.typed_words as f32 / self.start_time.elapsed().as_secs_f32()
+    }
+
     fn get_next_sentence(&mut self) {
         match self.sources.choose(&mut thread_rng()) {
             Some(source) => match source.get_new_sentence() {
@@ -135,12 +143,8 @@ impl SentenceTyper {
             "Errors: {} | Accuracy: {:.02}% | WPM: {:.02}",
             self.errors,
             self.get_accuracy(),
-            60.0 * self.typed_words as f32 / self.start_time.elapsed().as_secs_f32()
+            self.get_wpms()
         );
-    }
-
-    fn get_accuracy(&self) -> f32 {
-        (100.0 - (self.errors as f32 * 100.0 / self.typed_chars as f32)).max(0.0)
     }
 }
 
