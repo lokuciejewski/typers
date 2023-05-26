@@ -10,7 +10,10 @@ use clap::{Parser, ValueHint};
 use modules::{
     config::Config,
     sentence_typer::SentenceTyper,
-    sources::{file_source::FileSource, text_source::TextSource, wiki_source::WikipediaSource},
+    sources::{
+        file_source::FileSource, text_source::TextSource, wiki_source::WikipediaSource,
+        Configurable,
+    },
 };
 
 #[derive(Parser, Debug)]
@@ -27,6 +30,12 @@ struct Args {
     /// Number of sentences to be run
     #[arg(short, long, default_value_t = 1)]
     number: u8,
+}
+
+impl Args {
+    pub fn any(&self) -> bool {
+        self.wikipedia || self.file_paths.is_some()
+    }
 }
 
 fn main() {
@@ -68,7 +77,18 @@ fn main() {
     let config: Config = toml::from_str(&contents).unwrap();
 
     let mut sentence_typer = SentenceTyper::default();
-    let args = Args::parse();
+    let mut args = Args::parse();
+
+    // Use default args if none were provided
+    if !args.any() {
+        let mut default_args = config
+            .application
+            .default_args
+            .split(" ")
+            .collect::<Vec<&str>>();
+        default_args.insert(0, "typers");
+        args = Args::parse_from(default_args);
+    }
 
     // Piped input
     if atty::isnt(atty::Stream::Stdin) {
@@ -80,7 +100,7 @@ fn main() {
 
     // Wikipedia
     if args.wikipedia {
-        let wiki_source = WikipediaSource::default();
+        let wiki_source = WikipediaSource::from_config(config);
         sentence_typer.add_source(wiki_source);
     }
 

@@ -5,16 +5,16 @@ use toml::value::Array;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
-    application: Application,
-    wikipedia: Wikipedia,
+    pub application: Application,
+    pub wikipedia: Wikipedia,
 }
 
 #[derive(Deserialize, Debug)]
-struct Application {
-    default_args: String,
+pub struct Application {
+    pub default_args: String,
 }
 
 #[derive(Deserialize, Debug)]
-struct Wikipedia {
-    languages: Array,
+pub struct Wikipedia {
+    pub languages: Array,
 }

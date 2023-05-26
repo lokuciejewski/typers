@@ -1,23 +1,47 @@
+use rand::{seq::SliceRandom, thread_rng};
 use reqwest::StatusCode;
 use serde_json::Value;
 
-use super::Sourceable;
+use super::{Configurable, Sourceable};
 
 pub struct WikipediaSource {
     http_address: String,
+    languages: Vec<String>,
 }
 
 impl Default for WikipediaSource {
     fn default() -> Self {
         Self {
-            http_address: "https://en.wikipedia.org/api/rest_v1/page/random/summary".to_owned(),
+            http_address: "https://$lang.wikipedia.org/api/rest_v1/page/random/summary".to_owned(),
+            languages: vec!["en".to_string()],
+        }
+    }
+}
+
+impl Configurable for WikipediaSource {
+    fn from_config(config: crate::modules::config::Config) -> Self {
+        Self {
+            http_address: "https://$lang.wikipedia.org/api/rest_v1/page/random/summary".to_owned(),
+            languages: config
+                .wikipedia
+                .languages
+                .into_iter()
+                .map(|v| {
+                    let mut t = v.to_string();
+                    t.retain(|c| c.is_alphabetic());
+                    t
+                })
+                .collect(),
         }
     }
 }
 
 impl Sourceable for WikipediaSource {
     fn get_new_sentence(&self) -> Result<String, String> {
-        match reqwest::blocking::get(&self.http_address) {
+        let url = &self
+            .http_address
+            .replace("$lang", self.languages.choose(&mut thread_rng()).unwrap());
+        match reqwest::blocking::get(url) {
             Ok(resp) => {
                 if resp.status() == StatusCode::OK {
                     let obj: Value = serde_json::from_str(resp.text().unwrap().as_str()).unwrap();
