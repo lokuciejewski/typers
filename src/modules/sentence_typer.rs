@@ -122,10 +122,9 @@ impl SentenceTyper {
                         }
                         self.typed_chars += 1;
                         self.current_idx += 1;
-                        match self.typed_arr.get_mut(self.current_idx) {
-                            Some(s) => *s = TypedAs::Current,
-                            None => (), // End of the sentence
-                        }
+                        if let Some(s) = self.typed_arr.get_mut(self.current_idx) {
+                            *s = TypedAs::Current
+                        } // Else end of sentence
                     } else {
                         self.errors += 1;
                         *self.typed_arr.get_mut(self.current_idx).unwrap() = TypedAs::Wrong;
@@ -152,10 +151,9 @@ impl Display for SentenceTyper {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.current_contents
             .chars()
-            .into_iter()
             .enumerate()
-            .map(|(idx, char)| match self.typed_arr.get(idx).unwrap() {
-                TypedAs::Pending => write!(f, "{}", char.to_string()),
+            .try_for_each(|(idx, char)| match self.typed_arr.get(idx).unwrap() {
+                TypedAs::Pending => write!(f, "{}", char),
                 TypedAs::Correct => write!(f, "{}", char.to_string().bold().green()),
                 TypedAs::Wrong => write!(f, "{}", char.to_string().bold().red().reversed()),
                 TypedAs::Current => write!(f, "{}", char.to_string().reversed()),
@@ -163,7 +161,6 @@ impl Display for SentenceTyper {
                     write!(f, "{}", char.to_string().bold().bright_red().underline())
                 }
             })
-            .collect()
     }
 }
 

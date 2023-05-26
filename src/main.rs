@@ -56,7 +56,7 @@ fn main() {
     // Remove config file if in debug mode
     #[cfg(debug_assertions)]
     if config_path.exists() {
-        std::fs::remove_file(config_path.to_owned()).ok();
+        std::fs::remove_file(&config_path).ok();
     }
 
     // Check if config exists
@@ -64,10 +64,12 @@ fn main() {
         std::fs::create_dir_all(config_path.parent().unwrap()).unwrap();
         let mut default_config_path = env::current_dir().unwrap();
         default_config_path.push("default_config.toml");
-        std::fs::copy(default_config_path.to_owned(), config_path.to_owned()).expect(&format!(
-            "Could not copy the default config from {:?} to {:?}",
-            default_config_path, config_path
-        ));
+        std::fs::copy(&default_config_path, &config_path).unwrap_or_else(|_| {
+            panic!(
+                "Could not copy the default config from {:?} to {:?}",
+                default_config_path, config_path
+            );
+        });
         println!("Default config copied to {:?}", config_path);
     }
 
@@ -84,7 +86,7 @@ fn main() {
         let mut default_args = config
             .application
             .default_args
-            .split(" ")
+            .split(' ')
             .collect::<Vec<&str>>();
         default_args.insert(0, "typers");
         args = Args::parse_from(default_args);
@@ -105,21 +107,19 @@ fn main() {
     }
 
     // Files
-    match args.file_paths {
-        Some(mut v) => {
-            v.sort();
-            v.dedup();
-            v.into_iter().for_each(
-                |file_path| match FileSource::from_file(file_path.to_owned()) {
-                    Ok(file_source) => {
-                        sentence_typer.add_source(file_source);
-                    }
-                    Err(err) => eprintln!("Could not add source: {} - {}", file_path, err),
-                },
-            );
-        }
-        None => (),
+    if let Some(mut v) = args.file_paths {
+        v.sort();
+        v.dedup();
+        v.into_iter().for_each(
+            |file_path| match FileSource::from_file(file_path.to_owned()) {
+                Ok(file_source) => {
+                    sentence_typer.add_source(file_source);
+                }
+                Err(err) => eprintln!("Could not add source: {} - {}", file_path, err),
+            },
+        );
     }
+
     sentence_typer.type_sentences(args.number);
 
     match sentence_typer.get_accuracy() {

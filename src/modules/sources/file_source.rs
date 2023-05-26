@@ -31,7 +31,7 @@ impl FileSource {
         if self.file_path.exists() {
             match self.file_path.extension() {
                 Some(extension) => match extension.to_str().unwrap() {
-                    "json" => match fs::File::open(self.file_path.to_owned()) {
+                    "json" => match fs::File::open(&self.file_path) {
                         Ok(mut f) => {
                             let mut contents = String::new();
                             f.read_to_string(&mut contents).unwrap();

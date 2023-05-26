@@ -49,12 +49,11 @@ impl Sourceable for WikipediaSource {
                         .get("extract")
                         .unwrap()
                         .to_string()
-                        .strip_prefix("\"")
+                        .strip_prefix('\"')
                         .unwrap()
-                        .strip_suffix("\"")
+                        .strip_suffix('\"')
                         .unwrap()
-                        .replace("\\", "")
-                        .to_string();
+                        .replace('\\', "");
                     Ok(any_ascii::any_ascii(extract.as_str()))
                 } else {
                     Err(format!(
