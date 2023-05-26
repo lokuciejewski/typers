@@ -2,12 +2,13 @@ mod modules;
 
 use std::{
     env,
-    io::{self, BufRead},
-    os, path,
+    fs::File,
+    io::{self, BufRead, Read},
 };
 
 use clap::{Parser, ValueHint};
 use modules::{
+    config::Config,
     sentence_typer::SentenceTyper,
     sources::{file_source::FileSource, text_source::TextSource, wiki_source::WikipediaSource},
 };
@@ -32,31 +33,39 @@ fn main() {
     // Get config location
     let config_path = match home::home_dir() {
         Some(mut home_path) => {
-            home_path.push(".typers/config.yaml");
+            home_path.push(".typers/config.toml");
             home_path
         }
         None => {
             let mut home_path = env::current_dir().unwrap();
-            home_path.push("/config.yaml");
+            home_path.push("/config.toml");
             eprintln!("No home path found! Using config in {:?}", home_path);
             home_path
         }
     };
 
+    // Remove config file if in debug mode
+    #[cfg(debug_assertions)]
+    if config_path.exists() {
+        std::fs::remove_file(config_path.to_owned()).ok();
+    }
+
     // Check if config exists
     if !config_path.exists() {
         std::fs::create_dir_all(config_path.parent().unwrap()).unwrap();
         let mut default_config_path = env::current_dir().unwrap();
-        default_config_path.push("default_config.yaml");
+        default_config_path.push("default_config.toml");
         std::fs::copy(default_config_path.to_owned(), config_path.to_owned()).expect(&format!(
             "Could not copy the default config from {:?} to {:?}",
             default_config_path, config_path
         ));
-        println!(
-            "Default config copied to {:?}",
-            config_path.parent().unwrap()
-        );
+        println!("Default config copied to {:?}", config_path);
     }
+
+    let mut conf_file = File::open(config_path).unwrap();
+    let mut contents = String::new();
+    conf_file.read_to_string(&mut contents).unwrap();
+    let config: Config = toml::from_str(&contents).unwrap();
 
     let mut sentence_typer = SentenceTyper::default();
     let args = Args::parse();

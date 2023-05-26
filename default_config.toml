@@ -1,0 +1,5 @@
+[application]
+default_args = "-w -n 1"
+
+[wikipedia]
+languages = ["en", "fr", "es"]
