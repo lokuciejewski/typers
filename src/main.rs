@@ -1,6 +1,10 @@
 mod modules;
 
-use std::io::{self, BufRead};
+use std::{
+    env,
+    io::{self, BufRead},
+    os, path,
+};
 
 use clap::{Parser, ValueHint};
 use modules::{
@@ -25,6 +29,35 @@ struct Args {
 }
 
 fn main() {
+    // Get config location
+    let config_path = match home::home_dir() {
+        Some(mut home_path) => {
+            home_path.push(".typers/config.yaml");
+            home_path
+        }
+        None => {
+            let mut home_path = env::current_dir().unwrap();
+            home_path.push("/config.yaml");
+            eprintln!("No home path found! Using config in {:?}", home_path);
+            home_path
+        }
+    };
+
+    // Check if config exists
+    if !config_path.exists() {
+        std::fs::create_dir_all(config_path.parent().unwrap()).unwrap();
+        let mut default_config_path = env::current_dir().unwrap();
+        default_config_path.push("default_config.yaml");
+        std::fs::copy(default_config_path.to_owned(), config_path.to_owned()).expect(&format!(
+            "Could not copy the default config from {:?} to {:?}",
+            default_config_path, config_path
+        ));
+        println!(
+            "Default config copied to {:?}",
+            config_path.parent().unwrap()
+        );
+    }
+
     let mut sentence_typer = SentenceTyper::default();
     let args = Args::parse();
 
