@@ -1,3 +1,4 @@
+use iso639_1::from_iso639_1;
 use rand::{seq::SliceRandom, thread_rng};
 use reqwest::StatusCode;
 use serde_json::Value;
@@ -20,7 +21,7 @@ impl Default for WikipediaSource {
 
 impl Configurable for WikipediaSource {
     fn from_config(config: crate::modules::config::Config) -> Self {
-        Self {
+        let ws = WikipediaSource {
             http_address: "https://$lang.wikipedia.org/api/rest_v1/page/random/summary".to_owned(),
             languages: config
                 .wikipedia
@@ -31,8 +32,16 @@ impl Configurable for WikipediaSource {
                     t.retain(|c| c.is_alphabetic());
                     t
                 })
+                .filter(|code| match from_iso639_1(&code) {
+                    Ok(_) => true,
+                    Err(_) => false,
+                })
                 .collect(),
-        }
+        };
+        if ws.languages.is_empty() {
+            panic!("No languages parsed successfully! Please check the config and try again.");
+        };
+        ws
     }
 }
 
