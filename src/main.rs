@@ -46,7 +46,7 @@ fn main() {
             home_path
         }
         None => {
-            let mut home_path = env::current_dir().unwrap();
+            let mut home_path = env::current_dir().expect("Error while getting current directory!");
             home_path.push("/config.toml");
             eprintln!("No home path found! Using config in {:?}", home_path);
             home_path
@@ -61,8 +61,14 @@ fn main() {
 
     // Check if config exists
     if !config_path.exists() {
-        std::fs::create_dir_all(config_path.parent().unwrap()).unwrap();
-        let mut default_config_path = env::current_dir().unwrap();
+        std::fs::create_dir_all(
+            config_path
+                .parent()
+                .expect("Could not get parent directory."),
+        )
+        .expect("Could not create config directory. Verify your permissions and try again.");
+        let mut default_config_path =
+            env::current_dir().expect("Error while getting current directory!");
         default_config_path.push("default_config.toml");
         std::fs::copy(&default_config_path, &config_path).unwrap_or_else(|_| {
             panic!(
@@ -73,10 +79,13 @@ fn main() {
         println!("Default config copied to {:?}", config_path);
     }
 
-    let mut conf_file = File::open(config_path).unwrap();
+    let mut conf_file = File::open(config_path)
+        .expect("Could not open the config file! Verify your permissions and try again.");
     let mut contents = String::new();
-    conf_file.read_to_string(&mut contents).unwrap();
-    let config: Config = toml::from_str(&contents).unwrap();
+    conf_file
+        .read_to_string(&mut contents)
+        .expect("Could not read the config file!");
+    let config: Config = toml::from_str(&contents).expect("TOML parse error!");
 
     let mut sentence_typer = SentenceTyper::default();
     let mut args = Args::parse();
@@ -95,7 +104,7 @@ fn main() {
     // Piped input
     if atty::isnt(atty::Stream::Stdin) {
         let stdin = io::stdin();
-        let read_line: String = stdin.lock().lines().next().unwrap().expect("");
+        let read_line: String = stdin.lock().lines().next().unwrap().expect("IO error!");
         let text_source = TextSource::new(read_line, '.');
         sentence_typer.add_source(text_source);
     }
