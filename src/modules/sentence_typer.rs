@@ -27,6 +27,7 @@ pub struct SentenceTyper {
 }
 
 impl SentenceTyper {
+    #[allow(unused)]
     pub fn new(source: &impl Sourceable) -> Self {
         match source.get_new_sentence() {
             Ok(contents) => {

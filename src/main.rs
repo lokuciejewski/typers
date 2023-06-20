@@ -4,6 +4,7 @@ use std::{
     env,
     fs::File,
     io::{self, BufRead, Read},
+    path::Path,
 };
 
 use clap::{Parser, ValueHint};
@@ -61,15 +62,10 @@ fn main() {
 
     // Check if config exists
     if !config_path.exists() {
-        std::fs::create_dir_all(
-            config_path
-                .parent()
-                .expect("Could not get parent directory."),
-        )
-        .expect("Could not create config directory. Verify your permissions and try again.");
+        std::fs::create_dir_all(config_path.parent().unwrap()).unwrap();
         let mut default_config_path =
-            env::current_dir().expect("Error while getting current directory!");
-        default_config_path.push("default_config.toml");
+            Path::new(&env::var("CARGO_HOME").unwrap_or("~/.cargo/".to_owned())).to_path_buf();
+        default_config_path.push(Path::new("typers/default_config.toml"));
         std::fs::copy(&default_config_path, &config_path).unwrap_or_else(|_| {
             panic!(
                 "Could not copy the default config from {:?} to {:?}",
