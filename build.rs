@@ -16,9 +16,7 @@ fn main() {
         }
     };
     std::fs::create_dir_all(config_path.parent().unwrap()).unwrap();
-    let mut default_config_path =
-        Path::new(&env::var("CARGO_HOME").unwrap_or("~/.cargo/".to_owned())).to_path_buf();
-    default_config_path.push(Path::new("typers/default_config.toml"));
+    let default_config_path = Path::new("default_config.toml");
     std::fs::copy(&default_config_path, &config_path).unwrap_or_else(|_| {
         panic!(
             "Could not copy the default config from {:?} to {:?}",
@@ -26,5 +24,4 @@ fn main() {
         );
     });
     println!("Default config copied to {:?}", config_path);
-    todo!()
 }
