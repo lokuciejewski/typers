@@ -22,5 +22,8 @@ rand = "0.8.5"
 atty = "0.2.14"
 home = "0.5.5"
 toml = "0.7.4"
-serde = { version = "1.0.163", features = ["derive"]}
+serde = { version = "1.0.163", features = ["derive"] }
 iso639-1 = "0.3.0"
+
+[build-dependencies]
+home = "0.5.5"
