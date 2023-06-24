@@ -4,7 +4,6 @@ use std::{
     env,
     fs::File,
     io::{self, BufRead, Read},
-    path::Path,
 };
 
 use clap::{Parser, ValueHint};

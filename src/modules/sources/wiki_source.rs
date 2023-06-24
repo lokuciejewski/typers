@@ -32,10 +32,7 @@ impl Configurable for WikipediaSource {
                     t.retain(|c| c.is_alphabetic());
                     t
                 })
-                .filter(|code| match from_iso639_1(&code) {
-                    Ok(_) => true,
-                    Err(_) => false,
-                })
+                .filter(|code| from_iso639_1(code).is_ok())
                 .collect(),
         };
         if ws.languages.is_empty() {

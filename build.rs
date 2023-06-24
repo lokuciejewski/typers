@@ -17,7 +17,7 @@ fn main() {
     };
     std::fs::create_dir_all(config_path.parent().unwrap()).unwrap();
     let default_config_path = Path::new("default_config.toml");
-    std::fs::copy(&default_config_path, &config_path).unwrap_or_else(|_| {
+    std::fs::copy(default_config_path, &config_path).unwrap_or_else(|_| {
         panic!(
             "Could not copy the default config from {:?} to {:?}",
             default_config_path, config_path

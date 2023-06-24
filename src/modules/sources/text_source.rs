@@ -20,9 +20,7 @@ impl TextSource {
 impl Sourceable for TextSource {
     fn get_new_sentence(&self) -> Result<String, String> {
         match self.sentences.choose(&mut thread_rng()) {
-            Some(s) => {
-                Ok(s.to_owned())
-            }
+            Some(s) => Ok(s.to_owned()),
             None => Err("Could not get a sentence!".to_string()),
         }
     }
