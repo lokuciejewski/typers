@@ -83,7 +83,7 @@ impl SentenceTyper {
                     self.current_idx = 0;
                     *self.typed_arr.get_mut(0).unwrap() = TypedAs::Current;
                 }
-                Err(_err) => panic!(),
+                Err(err) => panic!("{}", err),
             },
             None => {
                 eprintln!("No source provided! Please provide source according to `typers --help`")

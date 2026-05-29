@@ -47,7 +47,8 @@ impl Sourceable for WikipediaSource {
         let url = &self
             .http_address
             .replace("$lang", self.languages.choose(&mut thread_rng()).unwrap());
-        match reqwest::blocking::get(url) {
+        let request = reqwest::blocking::Client::new();
+        match request.get(url).header("User-Agent", "typers").send() {
             Ok(resp) => {
                 if resp.status() == StatusCode::OK {
                     let obj: Value = serde_json::from_str(resp.text().unwrap().as_str()).unwrap();
@@ -69,7 +70,7 @@ impl Sourceable for WikipediaSource {
                     ))
                 }
             }
-            Err(err) => Err(format!("Error ocurred while sending request: {err}")),
+            Err(err) => Err(format!("Error occurred while sending request: {err}")),
         }
     }
 }
